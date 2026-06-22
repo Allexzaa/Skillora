@@ -1,52 +1,38 @@
-<img src="assets/icon.jpeg" alt="Skillora" width="72" />
+<div align="center">
+  <img src="assets/icon.jpeg" alt="Skillora" width="100" />
 
-# Skillora
+  # Skillora
 
-**Private AI Job Search OS** — a fully local platform for job discovery, resume tailoring, and candidate coaching. No SaaS. No third-party data sharing. Everything runs on your machine.
+  **A private, local-first AI platform for job discovery, resume tailoring, and candidate coaching.**
+
+  ![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=flat&logo=python&logoColor=white)
+  ![Flask](https://img.shields.io/badge/Flask-3.0-black?style=flat&logo=flask&logoColor=white)
+  ![Ollama](https://img.shields.io/badge/Ollama-Local%20LLM-white?style=flat)
+  ![License](https://img.shields.io/badge/License-MIT-green?style=flat)
+</div>
 
 ---
 
-## Overview
-
-Skillora automates the most time-consuming parts of a job search — finding relevant listings, scoring them against your profile, tailoring your resume, and maintaining coaching context across sessions — using a local LLM (Ollama) and Playwright-powered scrapers. The entire pipeline runs offline.
-
-The system is built around three interfaces:
-
-| Page | Path | Purpose |
-|---|---|---|
-| Resume Coach | `/` | AI-guided resume builder with inline editing and PDF export |
-| Job Search Agent | `/agent` | Conversational agent that triggers multi-source scraping |
-| Job Results Board | `/jobs` | Filterable job board with save, dismiss, apply, and CSV export |
+Skillora automates the most time-consuming parts of a job search — finding relevant listings across seven sources, scoring them against your profile with a local LLM, tailoring your resume per role, and maintaining coaching context across sessions. Everything runs on your machine. No SaaS subscriptions, no third-party data sharing, no API costs.
 
 ---
 
 ## Features
 
-### Resume Engine (F001 + F002)
-- YAML-driven master resume with per-job override system — one base file, unlimited tailored variants
-- Jinja2 HTML template renders to pixel-accurate PDF via Playwright
-- Flask web app with AI-guided Q&A (Ollama) that builds a resume section by section
-- Inline `contenteditable` editing for every field; one-click save back to YAML and one-click PDF export
-- Persistent LLM memory injects past session facts and pending tasks into the next coaching session
+### AI Job Search Agent
+Describe what you're looking for in plain English. The agent searches **LinkedIn, Indeed, Glassdoor, Google Jobs, ZipRecruiter, Himalayas, and Arbeitnow** simultaneously, then scores every result for relevance against your candidate profile using a local LLM. Results land on a filterable review board where you can save, dismiss, apply, or export to CSV.
 
-### Job Scraper Agent (F003)
-- Conversational agent UI — describe a role in plain English, the agent calls the scrapers
-- Pulls from **7 sources**: LinkedIn, Indeed, Glassdoor, Google Jobs, ZipRecruiter, Himalayas, Arbeitnow
-- Local LLM relevance scoring against your candidate profile — each result gets a score and reasoning
-- Configurable rate limits and per-source result caps to avoid blocks
-- Results stored in SQLite; board supports save / dismiss / apply status tracking
+### Resume Engine
+A YAML-driven resume system built around a single master file with per-job override support. Write your resume once, generate an unlimited number of tailored variants — each one exported to a pixel-accurate PDF via Playwright and a custom HTML/CSS template. No formatting work between applications.
 
-### Job Preferences & Filters (F005)
-- Persistent sidebar on both the Agent and Results pages
-- Source toggle cards, job title chips, location type (remote / on-site / hybrid), locations, employment type
-- Filters: date posted, experience level, salary minimum
-- Preferences stored server-side and automatically injected into the agent's system prompt on every search
+### AI Resume Coach
+A Flask web app with a built-in Ollama coaching chatbot that walks through your resume section by section, offering targeted feedback and suggestions. Every field is inline-editable directly in the browser. One click saves back to YAML; another exports to PDF.
 
-### Persistent LLM Memory (F004)
-- Every coaching session is logged to disk as a JSONL file
-- After session end, the LLM extracts structured facts and a pending task list
-- Extracted memory is injected into the system prompt on the next session — the coach remembers without re-prompting
-- Memory drawer in the UI shows current facts and work log; individual entries can be deleted
+### Persistent LLM Memory
+The coaching session is logged and summarized automatically at the end of each conversation. Extracted facts and pending tasks are injected back into the system prompt on the next session — so the coach always knows your background, what was already improved, and what's still outstanding, without you having to repeat yourself.
+
+### Job Preferences & Saved Filters
+A persistent sidebar lets you configure job titles, location types, employment types, experience levels, salary minimum, and source toggles once. Preferences are stored server-side and automatically applied to every new search — no re-entering criteria each session.
 
 ---
 
@@ -55,61 +41,71 @@ The system is built around three interfaces:
 | Layer | Technology |
 |---|---|
 | Backend | Python 3.12, Flask |
-| LLM | Ollama (`qwen3:32b`) — runs fully local |
-| Scraping | python-jobspy (LinkedIn / Indeed / Glassdoor / Google / ZipRecruiter), Himalayas API, Arbeitnow API |
+| LLM | Ollama — runs fully local (`qwen3:32b`) |
+| Job scraping | python-jobspy · Himalayas API · Arbeitnow API |
 | Resume rendering | Jinja2 + Playwright (headless Chromium → PDF) |
-| Storage | SQLite (jobs), JSON files (memory, preferences) |
-| Frontend | Vanilla JS, HTML/CSS (no framework) |
+| Storage | SQLite (jobs) · JSON (memory, preferences) |
+| Frontend | Vanilla JS, HTML/CSS |
 
 ---
 
-## Setup
+## Prerequisites
 
-**Prerequisites:** Python 3.10+, [Ollama](https://ollama.com) installed and running
+- Python 3.10+
+- [Ollama](https://ollama.com) installed and running
+- ~20 GB disk space for the LLM model
+
+---
+
+## Installation
 
 ```bash
-# 1. Clone the repo
+# Clone the repository
 git clone https://github.com/Allexzaa/Skillora.git
 cd Skillora
 
-# 2. Create and activate a virtual environment
+# Create and activate a virtual environment
 python3 -m venv .venv
-source .venv/bin/activate        # Mac / Linux
-# .venv\Scripts\activate         # Windows
+source .venv/bin/activate       # Mac / Linux
+# .venv\Scripts\activate        # Windows
 
-# 3. Install dependencies
+# Install dependencies
 pip install -r webapp/requirements.txt
 
-# 4. Install Playwright's Chromium (required for PDF export)
+# Install Playwright's headless browser (required for PDF export)
 playwright install chromium
 
-# 5. Pull the Ollama model (one-time, ~20 GB)
+# Pull the Ollama model (one-time download)
 ollama pull qwen3:32b
 ```
 
 ---
 
-## Running the App
+## Running Skillora
 
 ```bash
-# From project root, with .venv active
 source .venv/bin/activate
 python webapp/app.py
 ```
 
-Open [http://localhost:5000](http://localhost:5000) in your browser.
+Open **http://localhost:5000** in your browser.
 
-| Route | Description |
+| Route | What it does |
 |---|---|
-| `http://localhost:5000/` | Resume Coach — AI Q&A, inline editing, PDF export |
-| `http://localhost:5000/agent` | Job Search Agent — describe a role, trigger scraping |
-| `http://localhost:5000/jobs` | Job Results Board — filter, save, apply, export CSV |
+| `/` | Resume Coach — AI Q&A, inline editing, PDF export |
+| `/agent` | Job Search Agent — describe a role and trigger a multi-source search |
+| `/jobs` | Job Results Board — filter, review, save, apply, export CSV |
 
 ---
 
-## Resume CLI (headless)
+## Resume Setup
 
-For PDF generation without the web app:
+Skillora's resume engine uses a plain YAML file as your master resume:
+
+1. Create `resume/resume-base.yaml` with your personal details (see the template structure in `resume/template.html`)
+2. Run the coach at `/` to build it interactively, or edit the YAML directly
+3. Create per-job overrides in `resume/overrides/resume-[slug].yaml` — only include the fields you want to change
+4. Export to PDF with one click from the web app, or via CLI:
 
 ```bash
 cd resume
@@ -117,20 +113,12 @@ source .venv/bin/activate
 pip install -r requirements.txt
 playwright install chromium
 
-# Preview in browser (instant)
-python render.py --preview
-python render.py --job sample --preview
-
-# Export to PDF
-python render.py
-python render.py --job sample
-python render.py --job sample --out "FirstName_LastName_Role.pdf"
+python render.py                           # Export base resume to PDF
+python render.py --job [slug]              # Export with job-specific overrides
+python render.py --preview                 # Preview in browser without generating PDF
 ```
 
-- Copy `resume/resume-base.example.yaml` → `resume/resume-base.yaml` and fill in your details
-- Edit `resume/template.html` for design
-- Create `resume/overrides/resume-[slug].yaml` for per-job overrides
-- PDFs are written to `resume/output/`
+PDFs are written to `resume/output/`.
 
 ---
 
@@ -139,52 +127,23 @@ python render.py --job sample --out "FirstName_LastName_Role.pdf"
 ```
 Skillora/
 ├── webapp/
-│   ├── app.py              # Flask app — all routes and LLM logic
-│   ├── db.py               # SQLite job storage
-│   ├── scrapers.py         # JobSpy, Himalayas, Arbeitnow scraper functions
-│   ├── requirements.txt    # Webapp dependencies
+│   ├── app.py              # Flask application — all routes and LLM logic
+│   ├── db.py               # SQLite job storage layer
+│   ├── scrapers.py         # Job board scraper functions
+│   ├── requirements.txt    # Dependencies
 │   └── templates/
-│       ├── index.html      # Resume Coach UI
-│       ├── agent.html      # Job Search Agent UI
-│       ├── jobs.html       # Job Results Board UI
+│       ├── index.html      # Resume Coach
+│       ├── agent.html      # Job Search Agent
+│       ├── jobs.html       # Job Results Board
 │       └── resume_partial.html
-├── resume/
-│   ├── render.py           # CLI resume renderer
-│   ├── template.html       # Jinja2 + CSS resume template
-│   ├── resume-base.yaml    # Master resume content (edit this)
-│   ├── requirements.txt    # Resume module dependencies
-│   └── overrides/          # Per-job override YAML files
-└── Project-history/        # Feature specs and phase logs
+└── resume/
+    ├── render.py           # CLI PDF renderer
+    ├── template.html       # Jinja2 + CSS resume template
+    └── requirements.txt    # Resume module dependencies
 ```
-
----
-
-## Job Sources
-
-| Source | Method | Notes |
-|---|---|---|
-| LinkedIn | python-jobspy | Rate-limited; default 15 results/search |
-| Indeed | python-jobspy | Rate-limited; default 15 results/search |
-| Glassdoor | python-jobspy | Rate-limited; default 15 results/search |
-| Google Jobs | python-jobspy | Rate-limited; default 15 results/search |
-| ZipRecruiter | python-jobspy | Rate-limited; default 15 results/search |
-| Himalayas | REST API | Remote-only; default 20 results |
-| Arbeitnow | REST API | Remote-only; no rate limit issues |
 
 ---
 
 ## Privacy
 
-All processing runs locally. No resume data, job preferences, session history, or LLM conversations leave your machine. Ollama serves the model from localhost. Job scraping contacts the listed job board APIs/sites directly — no intermediary service.
-
----
-
-## Feature History
-
-| Feature | Description | Status |
-|---|---|---|
-| F001 — Dynamic Resume | YAML → PDF pipeline with per-job overrides | Done |
-| F002 — Resume Builder Web App | Flask + Ollama coaching UI with inline editing | Done |
-| F003 — Job Scraper Agent | 7-source scraper + LLM scoring + review board | Done |
-| F004 — LLM Persistent Memory | Session logging, fact extraction, memory injection | Done |
-| F005 — Job Preferences & Filters | Persistent sidebar with source toggles and saved prefs | Done |
+All data stays on your machine. Resume content, session history, job preferences, and LLM conversations never leave localhost. Ollama runs the model locally with no external calls. Job scraping queries the listed job boards directly — there is no intermediary server.
