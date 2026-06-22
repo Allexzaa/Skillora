@@ -16,9 +16,13 @@ ENV/
 Alex_Zare_Resume_*.docx
 Alex_Zare_Resume_*.pdf
 
-# Personal resume content (keep template examples only)
+# Resume content — all personal and example files
 resume/resume-base.yaml
+resume/resume-base.example.yaml
 resume/overrides/
+
+# Internal AI session files
+CLAUDE.md
 
 # Generated output
 resume/output/
