@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="assets/icon.jpeg" alt="Skillora" width="180" />
+  <img src="assets/icon.jpeg" alt="Skillora" width="280" />
   <br /><br />
   <img src="assets/title.png" alt="Skillora" width="420" />
 
