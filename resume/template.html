@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,400;0,600;0,700&display=swap');
+
+/* ── Reset ───────────────────────────────── */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+/* ── Base ────────────────────────────────── */
+body {
+  font-family: 'Open Sans', Calibri, Arial, sans-serif;
+  font-size: 10pt;
+  color: #1a1a1a;
+  line-height: 1.3;
+}
+
+/* ── Header: name + contact ──────────────── */
+.resume-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 3px;
+}
+
+.name {
+  font-size: 28pt;
+  font-weight: 700;
+  color: #1c2f4a;
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+
+.contact {
+  text-align: right;
+  font-size: 9pt;
+  color: #333;
+  padding-bottom: 5px;
+  line-height: 1.6;
+}
+
+.contact a {
+  color: #333;
+  text-decoration: underline;
+}
+
+/* ── Title line ──────────────────────────── */
+.resume-title {
+  font-size: 13pt;
+  font-weight: 400;
+  color: #2d7c9a;
+  margin-bottom: 9px;
+}
+
+/* ── Summary ─────────────────────────────── */
+.summary p {
+  margin-bottom: 5px;
+  text-align: justify;
+  font-size: 10pt;
+}
+
+/* ── Expertise ───────────────────────────── */
+.expertise-label {
+  font-weight: 700;
+  font-size: 10pt;
+  margin-bottom: 3px;
+}
+
+.two-col {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.two-col .col { flex: 1; }
+
+.two-col .col div {
+  font-size: 9.5pt;
+  padding: 1.5px 0;
+}
+
+/* ── Section headers ─────────────────────── */
+.section-header {
+  font-size: 12pt;
+  font-weight: 700;
+  color: #2d7c9a;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-bottom: 1.5px solid #2d7c9a;
+  padding-bottom: 1px;
+  margin-top: 10px;
+  margin-bottom: 4px;
+}
+
+/* ── Experience ──────────────────────────── */
+.job-entry {
+  page-break-inside: avoid;
+}
+
+.job-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 9.5pt;
+  margin-top: 6px;
+}
+
+.job-title-bar {
+  background-color: #e6e6e6;
+  font-weight: 700;
+  font-size: 10pt;
+  padding: 2px 5px;
+  margin: 2px 0 3px 0;
+}
+
+/* ── Bullets ─────────────────────────────── */
+ul.bullets {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 2px 0;
+}
+
+ul.bullets li {
+  position: relative;
+  padding-left: 16px;
+  font-size: 9.5pt;
+  margin-bottom: 2px;
+}
+
+ul.bullets li::before {
+  content: "▪";
+  position: absolute;
+  left: 3px;
+  color: #1a1a1a;
+}
+
+/* ── Education ───────────────────────────── */
+.edu-row {
+  font-size: 10pt;
+  margin-bottom: 3px;
+}
+
+.cert-label {
+  font-weight: 700;
+  font-size: 10pt;
+  margin: 6px 0 3px 0;
+}
+
+/* ── Skills ──────────────────────────────── */
+ul.skills {
+  list-style: none;
+  padding: 0;
+}
+
+ul.skills li {
+  position: relative;
+  padding-left: 16px;
+  font-size: 9.5pt;
+  margin-bottom: 3px;
+}
+
+ul.skills li::before {
+  content: "▪";
+  position: absolute;
+  left: 3px;
+}
+
+/* ── Page break ─────────────────────────── */
+
+.page2-header {
+  display: none;
+}
+
+@media print {
+  .page2-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 9pt;
+    color: #333;
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 4px;
+    margin-bottom: 6px;
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- ── HEADER ─────────────────────────────── -->
+<div class="resume-header">
+  <div class="name">{{ meta.name }}</div>
+  <div class="contact">
+    {{ meta.location }} | {{ meta.phone }} | <a href="mailto:{{ meta.email }}">{{ meta.email }}</a> | <a href="{{ meta.linkedin_url }}">{{ meta.linkedin_label }}</a>
+  </div>
+</div>
+
+<!-- ── TITLE ──────────────────────────────── -->
+<div class="resume-title">{{ title }}</div>
+
+<!-- ── SUMMARY ───────────────────────────── -->
+<div class="summary">
+  {% for para in summary %}
+  <p>{{ para | trim }}</p>
+  {% endfor %}
+</div>
+
+<!-- ── EXPERTISE ─────────────────────────── -->
+<p class="expertise-label">Areas of expertise:</p>
+<div class="two-col">
+  <div class="col">
+    {% for item in expertise[:6] %}
+    <div>▪&nbsp; {{ item }}</div>
+    {% endfor %}
+  </div>
+  <div class="col">
+    {% for item in expertise[6:] %}
+    <div>▪&nbsp; {{ item }}</div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- ── PROFESSIONAL EXPERIENCE ───────────── -->
+<div class="section-header">Professional Experience</div>
+
+{% for job in experience %}
+<div class="job-entry">
+  <div class="job-row">
+    <span>{{ job.company }} | {{ job.location }}</span>
+    <span>{{ job.dates }}</span>
+  </div>
+  <div class="job-title-bar">{{ job.title }}</div>
+  {% if job.bullets %}
+  <ul class="bullets">
+    {% for bullet in job.bullets %}
+    <li>{{ bullet | trim }}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+</div>
+{% endfor %}
+
+<!-- ── EDUCATION & CERTIFICATIONS ────────── -->
+<div class="section-header">Education &amp; Certifications</div>
+
+{% for edu in education %}
+<div class="edu-row"><strong>{{ edu.degree }}</strong> | {{ edu.institution }} | {{ edu.location }} | {{ edu.year }}</div>
+{% endfor %}
+
+<p class="cert-label">Certifications:</p>
+{% set cert_half = ((certifications | length + 1) // 2) %}
+<div class="two-col">
+  <div class="col">
+    {% for cert in certifications[:cert_half] %}
+    <div>▪&nbsp; {{ cert }}</div>
+    {% endfor %}
+  </div>
+  <div class="col">
+    {% for cert in certifications[cert_half:] %}
+    <div>▪&nbsp; {{ cert }}</div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- ── TECHNICAL SKILLS ───────────────────── -->
+<div class="section-header">Technical Skills</div>
+
+<ul class="skills">
+  {% for skill in skills %}
+  <li><strong>{{ skill.category }}:</strong> {{ skill.items | trim }}</li>
+  {% endfor %}
+</ul>
+
+<!-- ── LANGUAGES ──────────────────────────── -->
+<div class="section-header">Languages</div>
+<ul class="bullets" style="margin-top: 3px;">
+  <li>{{ languages }}</li>
+</ul>
+
+</body>
+</html>

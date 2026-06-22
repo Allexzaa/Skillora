@@ -1,0 +1,47 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+
+# Virtual environments
+.venv/
+.venv-pdf2docx/
+venv/
+env/
+ENV/
+
+# Personal resume files
+Alex_Zare_Resume_*.docx
+Alex_Zare_Resume_*.pdf
+
+# Generated output
+resume/output/
+
+# Database
+webapp/jobs.db
+
+# Persistent memory (personal session data)
+webapp/memory/sessions/
+webapp/memory/facts.json
+webapp/memory/work_log.json
+
+# Keep preferences file structure but not personal data
+webapp/memory/job_preferences.json
+
+# Internal Claude project state
+.claude/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log

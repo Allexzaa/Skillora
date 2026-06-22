@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Resume Builder</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #f4f5f7;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ── Toolbar ─────────────────────────── */
+  .toolbar {
+    background: #1c2f4a;
+    color: #fff;
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  .toolbar .logo {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+
+  .toolbar .actions {
+    display: flex;
+    gap: 10px;
+  }
+
+  .btn {
+    padding: 6px 16px;
+    border: none;
+    border-radius: 4px;
+    font-size: 13px;
+    cursor: pointer;
+    font-weight: 600;
+  }
+
+  .btn-save        { background: #2d7c9a; color: #fff; }
+  .btn-export      { background: #27ae60; color: #fff; }
+  .btn-end-session { background: #6c4fa3; color: #fff; }
+  .btn-save:hover        { background: #256b85; }
+  .btn-export:hover      { background: #219150; }
+  .btn-end-session:hover { background: #5a3f8a; }
+  .btn-end-session:disabled { background: #b0a0c8; cursor: default; }
+
+  /* ── Toast ───────────────────────────── */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: #1c2f4a;
+    color: #fff;
+    padding: 10px 22px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    opacity: 0;
+    transition: opacity 0.25s, transform 0.25s;
+    pointer-events: none;
+    z-index: 200;
+  }
+
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  .toast.error { background: #c0392b; }
+
+  /* ── Memory drawer ───────────────────── */
+  .memory-drawer {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: #fff;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    transform: translateX(-100%);
+    transition: transform 0.2s ease;
+  }
+
+  .memory-drawer.open {
+    transform: translateX(0);
+  }
+
+  .drawer-header {
+    padding: 12px 14px;
+    border-bottom: 1px solid #eee;
+    background: #f9f9fb;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  .drawer-header span {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1c2f4a;
+  }
+
+  .drawer-close {
+    background: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    color: #888;
+    line-height: 1;
+    padding: 0 2px;
+  }
+
+  .drawer-close:hover { color: #333; }
+
+  .drawer-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .drawer-section-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: #888;
+    margin-bottom: 8px;
+  }
+
+  .memory-list {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .memory-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 12px;
+    color: #333;
+    line-height: 1.45;
+  }
+
+  .memory-item span {
+    flex: 1;
+  }
+
+  .memory-item .del-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #bbb;
+    font-size: 14px;
+    padding: 0;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+
+  .memory-item .del-btn:hover { color: #c0392b; }
+
+  .memory-empty {
+    font-size: 12px;
+    color: #bbb;
+    font-style: italic;
+  }
+
+  .add-fact-row {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+  }
+
+  .add-fact-input {
+    flex: 1;
+    padding: 6px 9px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 12px;
+    font-family: inherit;
+    outline: none;
+  }
+
+  .add-fact-input:focus { border-color: #2d7c9a; }
+
+  .btn-add-fact {
+    padding: 6px 12px;
+    background: #2d7c9a;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .btn-add-fact:hover { background: #256b85; }
+
+  .btn-memory {
+    padding: 3px 10px;
+    background: none;
+    border: 1px solid #c0c8d8;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #1c2f4a;
+    cursor: pointer;
+    margin-left: 8px;
+  }
+
+  .btn-memory:hover { background: #eef4f8; }
+
+  /* ── Main layout ─────────────────────── */
+  .main {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* ── Q&A panel (left) ────────────────── */
+  .qa-panel {
+    width: 38%;
+    background: #fff;
+    border-right: 1px solid #dde;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+  }
+
+  .qa-header {
+    padding: 14px 18px;
+    border-bottom: 1px solid #eee;
+    font-size: 13px;
+    font-weight: 600;
+    color: #1c2f4a;
+    background: #f9f9fb;
+  }
+
+  .qa-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .bubble {
+    max-width: 85%;
+    padding: 9px 13px;
+    border-radius: 12px;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .bubble.ai {
+    background: #eef4f8;
+    color: #1a1a1a;
+    align-self: flex-start;
+    border-bottom-left-radius: 3px;
+  }
+
+  .bubble.user {
+    background: #1c2f4a;
+    color: #fff;
+    align-self: flex-end;
+    border-bottom-right-radius: 3px;
+  }
+
+  .qa-input-row {
+    display: flex;
+    padding: 12px;
+    gap: 8px;
+    border-top: 1px solid #eee;
+    background: #fafafa;
+  }
+
+  .qa-input {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 13px;
+    outline: none;
+    resize: none;
+    font-family: inherit;
+  }
+
+  .qa-input:focus { border-color: #2d7c9a; }
+
+  .btn-send {
+    padding: 8px 16px;
+    background: #2d7c9a;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    align-self: flex-end;
+  }
+
+  .btn-send:hover { background: #256b85; }
+
+  .btn-stop {
+    display: none; padding: 8px 16px; background: #c0392b; color: #fff; border: none;
+    border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; align-self: flex-end;
+  }
+  .btn-stop:hover { background: #a93226; }
+
+  /* ── Resume panel (right) ────────────── */
+  .resume-panel {
+    flex: 1;
+    overflow-y: auto;
+    background: #e8e9ec;
+    padding: 24px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+  }
+
+  .resume-page {
+    background: #fff;
+    width: 760px;
+    min-height: 984px;
+    padding: 48px 56px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.12);
+    font-family: 'Open Sans', Calibri, Arial, sans-serif;
+    font-size: 10pt;
+    color: #1a1a1a;
+    line-height: 1.3;
+  }
+
+  .resume-empty {
+    color: #aaa;
+    font-size: 13px;
+    text-align: center;
+    margin-top: 40px;
+  }
+
+  /* ── Resume content styles (scoped under .resume-page) ─────── */
+  @import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap');
+
+  .resume-page { font-family: 'Open Sans', Calibri, Arial, sans-serif; font-size: 10pt; color: #1a1a1a; line-height: 1.3; }
+
+  .rp-header   { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 3px; }
+  .rp-name     { font-size: 28pt; font-weight: 700; color: #1c2f4a; line-height: 1; letter-spacing: -0.01em; }
+  .rp-contact  { text-align: right; font-size: 9pt; color: #333; padding-bottom: 5px; line-height: 1.6; }
+  .rp-contact a { color: #333; text-decoration: underline; }
+
+  .rp-title    { font-size: 13pt; font-weight: 400; color: #2d7c9a; margin-bottom: 9px; }
+
+  .rp-summary p { margin-bottom: 5px; text-align: justify; font-size: 10pt; }
+
+  .rp-expertise-label { font-weight: 700; font-size: 10pt; margin-bottom: 3px; }
+
+  .rp-two-col      { display: flex; gap: 8px; margin-bottom: 4px; }
+  .rp-col          { flex: 1; }
+  .rp-col div      { font-size: 9.5pt; padding: 1.5px 0; }
+
+  .rp-section-header { font-size: 12pt; font-weight: 700; color: #2d7c9a; text-transform: uppercase;
+                        letter-spacing: 0.06em; border-bottom: 1.5px solid #2d7c9a;
+                        padding-bottom: 1px; margin-top: 10px; margin-bottom: 4px; }
+
+  .rp-job-entry    { page-break-inside: avoid; }
+  .rp-job-row      { display: flex; justify-content: space-between; align-items: baseline;
+                      font-size: 9.5pt; margin-top: 6px; }
+  .rp-job-title-bar { background-color: #e6e6e6; font-weight: 700; font-size: 10pt;
+                       padding: 2px 5px; margin: 2px 0 3px 0; }
+
+  .rp-bullets      { list-style: none; padding: 0; margin: 0 0 2px 0; }
+  .rp-bullets li   { position: relative; padding-left: 16px; font-size: 9.5pt; margin-bottom: 2px; }
+  .rp-bullets li::before { content: "▪"; position: absolute; left: 3px; color: #1a1a1a; }
+
+  .rp-edu-row  { font-size: 10pt; margin-bottom: 3px; }
+  .rp-cert-label { font-weight: 700; font-size: 10pt; margin: 6px 0 3px 0; }
+
+  .rp-skills   { list-style: none; padding: 0; }
+  .rp-skills li { position: relative; padding-left: 16px; font-size: 9.5pt; margin-bottom: 3px; }
+  .rp-skills li::before { content: "▪"; position: absolute; left: 3px; }
+
+  /* editable highlight */
+  [contenteditable="true"]:hover  { outline: 1px dashed #2d7c9a; border-radius: 2px; cursor: text; }
+  [contenteditable="true"]:focus  { outline: 2px solid #2d7c9a; border-radius: 2px; background: #f0f8fc; }
+
+  /* ── Startup modal ───────────────────── */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+  }
+
+  .modal {
+    background: #fff;
+    border-radius: 10px;
+    padding: 36px 40px;
+    width: 420px;
+    text-align: center;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+  }
+
+  .modal h2 {
+    font-size: 20px;
+    color: #1c2f4a;
+    margin-bottom: 8px;
+  }
+
+  .modal p {
+    font-size: 13px;
+    color: #666;
+    margin-bottom: 28px;
+    line-height: 1.6;
+  }
+
+  .modal-actions {
+    display: flex;
+    gap: 14px;
+    justify-content: center;
+  }
+
+  .btn-modal {
+    padding: 11px 28px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .btn-fresh { background: #2d7c9a; color: #fff; }
+  .btn-load  { background: #f0f0f0; color: #1c2f4a; border: 1px solid #ccc; }
+  .btn-fresh:hover { background: #256b85; }
+  .btn-load:hover  { background: #e4e4e4; }
+</style>
+</head>
+<body>
+
+<!-- ── Toast ─────────────────────────────── -->
+<div class="toast" id="toast"></div>
+
+<!-- ── Startup modal ───────────────────── -->
+<div class="modal-overlay" id="startModal">
+  <div class="modal">
+    <h2>Resume Builder</h2>
+    <p>How would you like to start?</p>
+    <div class="modal-actions">
+      <button class="btn-modal btn-fresh" onclick="startFresh()">Start Fresh</button>
+      <button class="btn-modal btn-load"  onclick="loadResume()">Load My Resume</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Toolbar ─────────────────────────── -->
+<div class="toolbar">
+  <div class="logo">Resume Builder</div>
+  <div class="actions">
+    <button class="btn btn-end-session" id="btnEndSession" onclick="endSession()" disabled>End Session</button>
+    <button class="btn btn-save"   onclick="saveResume()">Save</button>
+    <button class="btn btn-export" onclick="exportPdf()">Export PDF</button>
+    <a class="btn btn-save" href="/agent" style="text-decoration:none;">Job Search →</a>
+  </div>
+</div>
+
+<!-- ── Main ───────────────────────────── -->
+<div class="main">
+
+  <!-- Q&A panel -->
+  <div class="qa-panel" style="position:relative;">
+    <div class="qa-header" style="display:flex;align-items:center;justify-content:space-between;">
+      <span>AI Resume Coach</span>
+      <button class="btn-memory" onclick="openMemoryDrawer()">Memory</button>
+    </div>
+
+    <!-- Memory drawer (slides over left panel) -->
+    <div class="memory-drawer" id="memoryDrawer">
+      <div class="drawer-header">
+        <span>Session Memory</span>
+        <button class="drawer-close" onclick="closeMemoryDrawer()">✕</button>
+      </div>
+      <div class="drawer-body" id="drawerBody">
+        <!-- injected by JS -->
+      </div>
+    </div>
+
+    <div class="qa-messages" id="qaMessages">
+      <!-- chat bubbles injected here -->
+    </div>
+    <div class="qa-input-row">
+      <textarea class="qa-input" id="qaInput" rows="2"
+        placeholder="Type your answer..."
+        onkeydown="handleKey(event)"></textarea>
+      <button class="btn-send" id="sendBtn" onclick="sendMessage()">Send</button>
+      <button class="btn-stop" id="stopBtn" onclick="stopChat()">Stop</button>
+    </div>
+  </div>
+
+  <!-- Resume panel -->
+  <div class="resume-panel">
+    <div class="resume-page" id="resumePage">
+      <div class="resume-empty" id="resumeEmpty">
+        Your resume will appear here as you answer questions.
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // ── Resume state (in-memory) ─────────
+  let resumeState = {};
+
+  // ── Modal actions ────────────────────
+  function startFresh() {
+    document.getElementById('startModal').style.display = 'none';
+    fetch('/api/start')
+      .then(r => r.json())
+      .then(data => addBubble('ai', data.reply))
+      .catch(() => addBubble('ai', "Couldn't connect to the AI — is Ollama running?"));
+  }
+
+  function loadResume() {
+    document.getElementById('startModal').style.display = 'none';
+    addBubble('ai', "Loading your resume...");
+    fetch('/load')
+      .then(r => r.json())
+      .then(data => {
+        if (data.error) throw new Error(data.error);
+        document.getElementById('resumePage').innerHTML = data.html;
+        resumeState = data.data || {};
+        makeEditable();
+        document.getElementById('btnEndSession').disabled = false;
+        addBubble('ai', "Your resume is loaded!\n\n• Click any text on the right to edit it inline.\n\n• To rewrite a section: paste the text here and tell me what to change. Example:\n\"Rephrase this in past tense: Currently completing an intensive curriculum...\"\n\nI'll return only the rewritten text — ready to paste back in.");
+      })
+      .catch(err => {
+        addBubble('ai', "Couldn't load resume (" + err.message + "). Starting fresh instead.");
+        startFresh();
+      });
+  }
+
+  // ── Chat ─────────────────────────────
+  function addBubble(role, text) {
+    const el = document.createElement('div');
+    el.className = `bubble ${role}`;
+    el.textContent = text;
+    const container = document.getElementById('qaMessages');
+    container.appendChild(el);
+    container.scrollTop = container.scrollHeight;
+    return el;
+  }
+
+  function handleKey(e) {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+  }
+
+  let thinking = false;
+  let _abortCtrl = null;
+
+  function setInputEnabled(enabled) {
+    document.getElementById('qaInput').disabled = !enabled;
+    document.getElementById('sendBtn').style.display = enabled ? '' : 'none';
+    document.getElementById('stopBtn').style.display = enabled ? 'none' : 'block';
+  }
+
+  function stopChat() {
+    if (_abortCtrl) _abortCtrl.abort();
+  }
+
+  function sendMessage() {
+    if (thinking) return;
+    const input = document.getElementById('qaInput');
+    const text = input.value.trim();
+    if (!text) return;
+    addBubble('user', text);
+    input.value = '';
+    thinking = true;
+    setInputEnabled(false);
+
+    const dots = addBubble('ai', '...');
+    _abortCtrl = new AbortController();
+    fetch('/api/chat', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({message: text}),
+      signal: _abortCtrl.signal,
+    })
+    .then(r => r.json())
+    .then(data => {
+      dots.remove();
+      addBubble('ai', data.reply);
+      if (data.state_data) resumeState = data.state_data;
+      if (data.update) handleUpdate(data.update);
+    })
+    .catch(err => {
+      dots.remove();
+      if (err.name !== 'AbortError') addBubble('ai', 'Error: ' + err.message);
+    })
+    .finally(() => { _abortCtrl = null; thinking = false; setInputEnabled(true); });
+  }
+
+  function handleUpdate(update) {
+    const target = document.getElementById('section-' + update.section);
+    if (target) {
+      target.outerHTML = update.html;
+    } else {
+      document.getElementById('resumePage').insertAdjacentHTML('beforeend', update.html);
+    }
+    const el = document.getElementById('section-' + update.section);
+    if (el) {
+      el.style.background = '#fffbe6';
+      setTimeout(() => el.style.background = '', 900);
+      makeEditable(el);   // activate editing on new content immediately
+    }
+  }
+
+  // ── Inline editing ───────────────────
+  // root: optional Element to scope to (defaults to full resume page)
+  // data-editable guard prevents duplicate blur listeners on re-calls
+  function makeEditable(root) {
+    const container = root || document.getElementById('resumePage');
+    container.querySelectorAll('[data-field]:not([data-editable])').forEach(el => {
+      el.contentEditable = 'true';
+      el.dataset.editable = 'true';
+      el.addEventListener('blur', () => {
+        const field = el.getAttribute('data-field');
+        const raw   = el.innerText.replace(/^▪[ \s]*/u, '').trim();
+        setNestedValue(resumeState, field, raw);
+      });
+    });
+  }
+
+  // Write a dot-path value into a nested object (e.g. "experience.0.title")
+  function setNestedValue(obj, path, value) {
+    const keys = path.split('.');
+    let cur = obj;
+    for (let i = 0; i < keys.length - 1; i++) {
+      const k = isNaN(keys[i]) ? keys[i] : parseInt(keys[i]);
+      if (cur[k] === undefined) cur[k] = {};
+      cur = cur[k];
+    }
+    const last = isNaN(keys.at(-1)) ? keys.at(-1) : parseInt(keys.at(-1));
+    cur[last] = value;
+  }
+
+  // ── Toolbar actions ──────────────────
+  function saveResume() {
+    const btn = document.querySelector('.btn-save');
+    btn.textContent = 'Saving...';
+    btn.disabled = true;
+    fetch('/api/save', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(resumeState),
+    })
+    .then(r => r.json())
+    .then(d => {
+      btn.textContent = d.ok ? '✓ Saved' : 'Save failed';
+      setTimeout(() => { btn.textContent = 'Save'; btn.disabled = false; }, 2000);
+      if (!d.ok) addBubble('ai', 'Save error: ' + d.error);
+    })
+    .catch(err => {
+      btn.textContent = 'Save';
+      btn.disabled = false;
+      addBubble('ai', 'Save error: ' + err.message);
+    });
+  }
+
+  function exportPdf() {
+    const btn = document.querySelector('.btn-export');
+    btn.textContent = 'Generating...';
+    btn.disabled = true;
+    // First push any in-memory edits to server, then export
+    fetch('/api/save', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(resumeState),
+    })
+    .then(() => {
+      window.location.href = '/export';
+      setTimeout(() => { btn.textContent = 'Export PDF'; btn.disabled = false; }, 3000);
+    })
+    .catch(err => {
+      btn.textContent = 'Export PDF';
+      btn.disabled = false;
+      addBubble('ai', 'Export error: ' + err.message);
+    });
+  }
+
+  // ── Memory drawer ────────────────────
+  function openMemoryDrawer() {
+    fetch('/api/memory')
+      .then(r => r.json())
+      .then(mem => { renderDrawer(mem); document.getElementById('memoryDrawer').classList.add('open'); })
+      .catch(() => showToast('Could not load memory', true));
+  }
+
+  function closeMemoryDrawer() {
+    document.getElementById('memoryDrawer').classList.remove('open');
+  }
+
+  function renderDrawer(mem) {
+    const facts     = mem.facts     || [];
+    const pending   = mem.pending   || [];
+    const completed = mem.completed || [];
+    const body = document.getElementById('drawerBody');
+    body.innerHTML = '';
+
+    // Facts section
+    const fsec = document.createElement('div');
+    fsec.innerHTML = '<div class="drawer-section-title">Facts</div>';
+    const flist = document.createElement('div');
+    flist.className = 'memory-list';
+    if (facts.length === 0) {
+      flist.innerHTML = '<div class="memory-empty">No facts yet.</div>';
+    } else {
+      facts.forEach((f, i) => {
+        const row = document.createElement('div');
+        row.className = 'memory-item';
+        row.innerHTML = `<span>${escHtml(f)}</span><button class="del-btn" title="Delete">✕</button>`;
+        row.querySelector('.del-btn').addEventListener('click', () => deleteFact(i));
+        flist.appendChild(row);
+      });
+    }
+    fsec.appendChild(flist);
+
+    // Add fact row
+    const addRow = document.createElement('div');
+    addRow.className = 'add-fact-row';
+    addRow.innerHTML = `<input class="add-fact-input" id="newFactInput" placeholder="Add a fact the coach should always know..." />
+                        <button class="btn-add-fact" onclick="addFact()">Add</button>`;
+    fsec.appendChild(addRow);
+    body.appendChild(fsec);
+
+    // Pending section
+    const psec = document.createElement('div');
+    psec.innerHTML = '<div class="drawer-section-title">Pending</div>';
+    const plist = document.createElement('div');
+    plist.className = 'memory-list';
+    if (pending.length === 0) {
+      plist.innerHTML = '<div class="memory-empty">Nothing pending.</div>';
+    } else {
+      pending.forEach((p, i) => {
+        const row = document.createElement('div');
+        row.className = 'memory-item';
+        row.innerHTML = `<span>${escHtml(p)}</span><button class="del-btn" title="Delete">✕</button>`;
+        row.querySelector('.del-btn').addEventListener('click', () => deletePending(i));
+        plist.appendChild(row);
+      });
+    }
+    psec.appendChild(plist);
+    body.appendChild(psec);
+
+    // Completed section (read-only)
+    const csec = document.createElement('div');
+    csec.innerHTML = '<div class="drawer-section-title">Completed</div>';
+    const clist = document.createElement('div');
+    clist.className = 'memory-list';
+    if (completed.length === 0) {
+      clist.innerHTML = '<div class="memory-empty">Nothing completed yet.</div>';
+    } else {
+      completed.forEach(c => {
+        const row = document.createElement('div');
+        row.className = 'memory-item';
+        row.innerHTML = `<span style="color:#555;">${escHtml(c)}</span>`;
+        clist.appendChild(row);
+      });
+    }
+    csec.appendChild(clist);
+    body.appendChild(csec);
+  }
+
+  function escHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function addFact() {
+    const input = document.getElementById('newFactInput');
+    const fact  = (input.value || '').trim();
+    if (!fact) return;
+    fetch('/api/memory/fact', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ fact }),
+    })
+    .then(r => r.json())
+    .then(d => {
+      if (!d.ok) { showToast('Error adding fact', true); return; }
+      input.value = '';
+      openMemoryDrawer();
+    })
+    .catch(() => showToast('Error adding fact', true));
+  }
+
+  function deleteFact(idx) {
+    fetch(`/api/memory/fact/${idx}`, { method: 'DELETE' })
+      .then(r => r.json())
+      .then(d => { if (d.ok) openMemoryDrawer(); else showToast('Error deleting fact', true); })
+      .catch(() => showToast('Error deleting fact', true));
+  }
+
+  function deletePending(idx) {
+    fetch(`/api/memory/pending/${idx}`, { method: 'DELETE' })
+      .then(r => r.json())
+      .then(d => { if (d.ok) openMemoryDrawer(); else showToast('Error deleting item', true); })
+      .catch(() => showToast('Error deleting item', true));
+  }
+
+  // ── Toast ────────────────────────────
+  let toastTimer = null;
+
+  function showToast(msg, isError) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className = 'toast' + (isError ? ' error' : '') + ' show';
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { el.className = 'toast'; }, 3000);
+  }
+
+  // ── End Session ───────────────────────
+  function endSession() {
+    const btn = document.getElementById('btnEndSession');
+    btn.textContent = 'Extracting...';
+    btn.disabled = true;
+    fetch('/api/memory/end-session', { method: 'POST' })
+      .then(r => r.json())
+      .then(data => {
+        if (data.ok) {
+          showToast('Memory updated', false);
+        } else {
+          showToast('Error: ' + (data.error || 'extraction failed'), true);
+        }
+      })
+      .catch(err => showToast('Error: ' + err.message, true))
+      .finally(() => {
+        btn.textContent = 'End Session';
+        btn.disabled = false;
+      });
+  }
+
+  // ── Restore session on navigation ────
+  fetch('/api/state')
+    .then(r => r.json())
+    .then(data => {
+      if (data.loaded) {
+        document.getElementById('startModal').style.display = 'none';
+        document.getElementById('resumePage').innerHTML = data.html;
+        resumeState = data.data || {};
+        makeEditable();
+        document.getElementById('btnEndSession').disabled = false;
+        addBubble('ai', "Welcome back! Your resume is still loaded. What would you like to work on?");
+      }
+      // If not loaded, modal stays visible — user picks their option
+    })
+    .catch(() => { /* network error — leave modal visible */ });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,121 @@
+{# resume_partial.html — injected into #resumePage in the webapp.
+   Each section is wrapped in <div id="section-[key]"> for targeted updates.
+   data-field attributes support Phase 4 contenteditable editing. #}
+
+{# ── Header + Title (section: meta / title) ────────────────────── #}
+<div id="section-meta">
+  <div class="rp-header">
+    <div class="rp-name" data-field="meta.name">{{ meta.name }}</div>
+    <div class="rp-contact">
+      <span data-field="meta.location">{{ meta.location }}</span> |
+      <span data-field="meta.phone">{{ meta.phone }}</span> |
+      <a href="mailto:{{ meta.email }}"><span data-field="meta.email">{{ meta.email }}</span></a> |
+      <a href="{{ meta.linkedin_url }}"><span data-field="meta.linkedin_label">{{ meta.linkedin_label }}</span></a>
+    </div>
+  </div>
+</div>
+
+<div id="section-title">
+  <div class="rp-title" data-field="title">{{ title }}</div>
+</div>
+
+{# ── Summary ──────────────────────────────────────────────────── #}
+<div id="section-summary">
+  <div class="rp-summary">
+    {% for para in summary %}
+    <p data-field="summary.{{ loop.index0 }}">{{ para | trim }}</p>
+    {% endfor %}
+  </div>
+</div>
+
+{# ── Expertise ────────────────────────────────────────────────── #}
+<div id="section-expertise">
+  <p class="rp-expertise-label">Areas of expertise:</p>
+  <div class="rp-two-col">
+    <div class="rp-col">
+      {% for item in expertise[:6] %}
+      <div data-field="expertise.{{ loop.index0 }}">▪&nbsp; {{ item }}</div>
+      {% endfor %}
+    </div>
+    <div class="rp-col">
+      {% for item in expertise[6:] %}
+      <div data-field="expertise.{{ loop.index0 + 6 }}">▪&nbsp; {{ item }}</div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+{# ── Professional Experience ───────────────────────────────────── #}
+<div id="section-experience">
+  <div class="rp-section-header">Professional Experience</div>
+  {% for job in experience %}
+  <div class="rp-job-entry" data-job-index="{{ loop.index0 }}">
+    <div class="rp-job-row">
+      <span>
+        <span data-field="experience.{{ loop.index0 }}.company">{{ job.company }}</span>
+        | <span data-field="experience.{{ loop.index0 }}.location">{{ job.location }}</span>
+      </span>
+      <span data-field="experience.{{ loop.index0 }}.dates">{{ job.dates }}</span>
+    </div>
+    <div class="rp-job-title-bar" data-field="experience.{{ loop.index0 }}.title">{{ job.title }}</div>
+    {% if job.bullets %}
+    <ul class="rp-bullets">
+      {% for bullet in job.bullets %}
+      <li data-field="experience.{{ loop.index0 }}.bullets.{{ loop.index0 }}">{{ bullet | trim }}</li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+
+{# ── Education & Certifications ────────────────────────────────── #}
+<div id="section-education">
+  <div class="rp-section-header">Education &amp; Certifications</div>
+  {% for edu in education %}
+  <div class="rp-edu-row">
+    <strong data-field="education.{{ loop.index0 }}.degree">{{ edu.degree }}</strong>
+    | <span data-field="education.{{ loop.index0 }}.institution">{{ edu.institution }}</span>
+    | <span data-field="education.{{ loop.index0 }}.location">{{ edu.location }}</span>
+    | <span data-field="education.{{ loop.index0 }}.year">{{ edu.year }}</span>
+  </div>
+  {% endfor %}
+</div>
+
+<div id="section-certifications">
+  <p class="rp-cert-label">Certifications:</p>
+  {% set cert_half = ((certifications | length + 1) // 2) %}
+  <div class="rp-two-col">
+    <div class="rp-col">
+      {% for cert in certifications[:cert_half] %}
+      <div data-field="certifications.{{ loop.index0 }}">▪&nbsp; {{ cert }}</div>
+      {% endfor %}
+    </div>
+    <div class="rp-col">
+      {% for cert in certifications[cert_half:] %}
+      <div data-field="certifications.{{ loop.index0 + cert_half }}">▪&nbsp; {{ cert }}</div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+{# ── Technical Skills ─────────────────────────────────────────── #}
+<div id="section-skills">
+  <div class="rp-section-header">Technical Skills</div>
+  <ul class="rp-skills">
+    {% for skill in skills %}
+    <li>
+      <strong data-field="skills.{{ loop.index0 }}.category">{{ skill.category }}:</strong>
+      <span data-field="skills.{{ loop.index0 }}.items">{{ skill.items | trim }}</span>
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+
+{# ── Languages ────────────────────────────────────────────────── #}
+<div id="section-languages">
+  <div class="rp-section-header">Languages</div>
+  <ul class="rp-bullets" style="margin-top: 3px;">
+    <li data-field="languages">{{ languages }}</li>
+  </ul>
+</div>

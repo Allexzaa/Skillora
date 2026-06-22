@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Job Search Agent</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #f4f5f7;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ── Toolbar ─────────────────────────── */
+  .toolbar {
+    background: #1c2f4a;
+    color: #fff;
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    z-index: 100;
+  }
+  .toolbar .logo { font-size: 15px; font-weight: 600; letter-spacing: 0.02em; }
+  .toolbar .actions { display: flex; gap: 10px; align-items: center; }
+
+  .btn {
+    padding: 6px 16px; border: none; border-radius: 4px; font-size: 13px;
+    cursor: pointer; font-weight: 600; text-decoration: none;
+    display: inline-flex; align-items: center;
+  }
+  .btn-nav    { background: #2d4f70; color: #fff; }
+  .btn-reset  { background: #2d7c9a; color: #fff; }
+  .btn-nav:hover   { background: #3a6490; }
+  .btn-reset:hover { background: #256b85; }
+
+  /* ── Top Filter Bar ──────────────────── */
+  .filter-bar {
+    background: #fff;
+    border-bottom: 1px solid #dde;
+    flex-shrink: 0;
+    overflow: hidden;
+  }
+
+  .filter-bar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 20px;
+    cursor: pointer;
+    user-select: none;
+    background: #f9f9fb;
+    border-bottom: 1px solid #eef;
+  }
+  .filter-bar-header:hover { background: #f3f4f6; }
+
+  .filter-bar-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    color: #8a94a6;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .filter-bar-chevron {
+    font-size: 10px;
+    color: #aaa;
+    transition: transform 0.22s ease;
+  }
+  .filter-bar.collapsed .filter-bar-chevron { transform: rotate(-90deg); }
+
+  .filter-bar-body {
+    display: flex;
+    gap: 0;
+    overflow: hidden;
+    max-height: 200px;
+    transition: max-height 0.25s ease, opacity 0.2s;
+    opacity: 1;
+  }
+  .filter-bar.collapsed .filter-bar-body {
+    max-height: 0;
+    opacity: 0;
+  }
+
+  .filter-col {
+    flex: 1;
+    padding: 12px 20px;
+    border-right: 1px solid #eef;
+    min-width: 0;
+  }
+  .filter-col:last-child { border-right: none; }
+
+  .filter-col-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: #555;
+    margin-bottom: 7px;
+    display: block;
+  }
+
+  .radio-row, .check-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 16px;
+  }
+
+  .radio-row label, .check-grid label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    color: #444;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .radio-row input, .check-grid input {
+    width: 13px; height: 13px; cursor: pointer; flex-shrink: 0; accent-color: #1c2f4a;
+  }
+
+  .filter-sel {
+    width: 100%; max-width: 200px; padding: 6px 8px; border: 1px solid #ccc;
+    border-radius: 5px; font-size: 12px; font-family: inherit; outline: none;
+    color: #333; background: #fff;
+  }
+  .filter-sel:focus { border-color: #2d7c9a; }
+
+  /* ── Page body ───────────────────────── */
+  .page-body { flex: 1; display: flex; overflow: hidden; }
+
+  /* ── Sidebar ─────────────────────────── */
+  .sidebar {
+    width: 262px;
+    flex-shrink: 0;
+    background: #fff;
+    border-right: 1px solid #dde;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .sb-section { border-bottom: 1px solid #eef; }
+  .sb-section:last-child { border-bottom: none; }
+
+  .sb-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 15px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .sb-header:hover { background: #f7f8fa; }
+
+  .sb-title {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    color: #8a94a6;
+  }
+
+  .sb-chevron {
+    font-size: 10px;
+    color: #bbb;
+    transition: transform 0.22s ease;
+  }
+  .sb-section.collapsed .sb-chevron { transform: rotate(-90deg); }
+
+  /* Sources section — no collapse */
+  .sb-sources-header { padding: 12px 15px 10px; }
+
+  .sb-body {
+    padding: 0 15px 14px;
+    overflow: hidden;
+    max-height: 2000px;
+    transition: max-height 0.28s ease, opacity 0.2s, padding 0.22s;
+    opacity: 1;
+  }
+  .sb-section.collapsed .sb-body {
+    max-height: 0;
+    opacity: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+
+  /* ── Source cards ────────────────────── */
+  .source-cards { display: flex; flex-direction: column; gap: 5px; padding: 0 15px 14px; }
+
+  .src-card {
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1.5px solid #dde;
+    background: #fff;
+    cursor: pointer;
+    user-select: none;
+    font-size: 12px;
+    font-weight: 600;
+    color: #555;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .src-card.active { border-color: #1c2f4a; background: #1c2f4a; color: #fff; }
+  .src-card:hover:not(.active) { border-color: #aab; background: #f7f8fa; }
+
+  .src-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .dot-linkedin    { background: #0a66c2; }
+  .dot-indeed      { background: #2164f3; }
+  .dot-glassdoor   { background: #0caa41; }
+  .dot-google      { background: #4285f4; }
+  .dot-ziprecruiter{ background: #555; }
+  .dot-himalayas   { background: #7c3aed; }
+  .dot-arbeitnow   { background: #e05d44; }
+
+  .src-note { font-size: 10px; font-weight: 400; opacity: 0.7; margin-left: auto; }
+  .src-card.active .src-note { opacity: 0.8; }
+
+  /* ── Preferences ─────────────────────── */
+  .pref-field { margin-bottom: 11px; }
+  .pref-label { font-size: 11px; font-weight: 600; color: #555; margin-bottom: 5px; display: block; }
+  .pref-note  { font-size: 10px; color: #aaa; font-weight: 400; }
+
+  .chip-row { display: flex; flex-wrap: wrap; gap: 5px; }
+  .chip {
+    padding: 3px 9px; border-radius: 10px; border: 1.5px solid #ccd;
+    background: #fff; font-size: 11px; font-weight: 600; color: #555;
+    cursor: pointer; user-select: none; transition: all 0.15s; white-space: nowrap;
+  }
+  .chip.active { border-color: #1c2f4a; background: #1c2f4a; color: #fff; }
+  .chip:hover:not(.active) { border-color: #aab; }
+
+  .multi-list { display: flex; flex-direction: column; gap: 5px; }
+  .multi-row { display: flex; gap: 4px; align-items: center; }
+  .multi-row input {
+    flex: 1; padding: 5px 7px; border: 1px solid #ccc;
+    border-radius: 5px; font-size: 12px; font-family: inherit; outline: none; color: #333;
+  }
+  .multi-row input:focus { border-color: #2d7c9a; }
+  .btn-rm {
+    background: none; border: none; color: #ccc;
+    cursor: pointer; font-size: 16px; line-height: 1; padding: 0 2px; flex-shrink: 0;
+  }
+  .btn-rm:hover { color: #e55; }
+  .btn-add {
+    margin-top: 4px; background: none; border: 1.5px dashed #ccd;
+    border-radius: 5px; color: #999; font-size: 11px; cursor: pointer;
+    padding: 4px; width: 100%; transition: all 0.15s;
+  }
+  .btn-add:hover { border-color: #2d7c9a; color: #2d7c9a; }
+
+  .btn-save-prefs {
+    width: 100%; padding: 7px 0; background: #2d7c9a; color: #fff;
+    border: none; border-radius: 5px; font-size: 12px; font-weight: 700;
+    cursor: pointer; margin-top: 6px; transition: background 0.15s;
+  }
+  .btn-save-prefs:hover { background: #256b85; }
+  .prefs-msg { font-size: 11px; text-align: center; margin-top: 5px; min-height: 14px; color: #2e7d32; }
+  .prefs-msg.error { color: #c62828; }
+
+  /* ── Chat panel ──────────────────────── */
+  .chat-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding: 16px 20px 20px;
+    min-width: 0;
+  }
+
+  .chat-panel {
+    flex: 1;
+    background: #fff;
+    border-radius: 8px;
+    border: 1px solid #dde;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    max-width: 860px;
+    width: 100%;
+    margin: 0 auto;
+  }
+
+  .chat-header {
+    padding: 11px 16px;
+    border-bottom: 1px solid #eee;
+    font-size: 12px;
+    font-weight: 600;
+    color: #1c2f4a;
+    background: #f9f9fb;
+    flex-shrink: 0;
+  }
+
+  .chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .bubble {
+    max-width: 80%;
+    padding: 9px 13px;
+    border-radius: 12px;
+    font-size: 13px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .bubble.ai   { background: #eef4f8; color: #1a1a1a; align-self: flex-start; border-bottom-left-radius: 3px; }
+  .bubble.user { background: #1c2f4a; color: #fff;    align-self: flex-end;   border-bottom-right-radius: 3px; }
+  .bubble.status {
+    background: #e8f5e9; color: #2e7d32; align-self: flex-start;
+    border-bottom-left-radius: 3px; font-weight: 600;
+  }
+  .bubble.status a { color: #1b5e20; font-weight: 700; }
+  .bubble.warn {
+    background: #fff8e1; color: #7c5800; align-self: flex-start;
+    border-bottom-left-radius: 3px; border-left: 3px solid #f9a825;
+  }
+
+  .typing-dots span {
+    display: inline-block; width: 6px; height: 6px;
+    background: #999; border-radius: 50%; margin: 0 1px;
+    animation: blink 1.2s infinite;
+  }
+  .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes blink {
+    0%, 80%, 100% { opacity: 0.2; transform: scale(0.8); }
+    40%           { opacity: 1;   transform: scale(1); }
+  }
+
+  .chat-input-row {
+    display: flex; padding: 12px; gap: 8px;
+    border-top: 1px solid #eee; background: #fafafa; flex-shrink: 0;
+  }
+  .chat-input {
+    flex: 1; padding: 8px 12px; border: 1px solid #ccc; border-radius: 6px;
+    font-size: 13px; outline: none; resize: none; font-family: inherit;
+  }
+  .chat-input:focus    { border-color: #2d7c9a; }
+  .chat-input:disabled { background: #f5f5f5; color: #aaa; }
+
+  .btn-send {
+    padding: 8px 16px; background: #2d7c9a; color: #fff; border: none;
+    border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; align-self: flex-end;
+  }
+  .btn-send:hover    { background: #256b85; }
+  .btn-send:disabled { background: #aaa; cursor: default; }
+
+  .btn-stop {
+    display: none; padding: 8px 16px; background: #c0392b; color: #fff; border: none;
+    border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; align-self: flex-end;
+  }
+  .btn-stop:hover { background: #a93226; }
+</style>
+</head>
+<body>
+
+<!-- ── Toolbar ─────────────────────────── -->
+<div class="toolbar">
+  <div class="logo">Job Search Agent</div>
+  <div class="actions">
+    <button class="btn btn-reset" onclick="newSearch()">Start New Search</button>
+    <a class="btn btn-nav" href="/jobs">View Results →</a>
+    <a class="btn btn-nav" href="/">Resume Builder</a>
+  </div>
+</div>
+
+<!-- ── Top Filter Bar ────────────────── -->
+<div class="filter-bar" id="filterBar">
+  <div class="filter-bar-header" onclick="toggleFilterBar()">
+    <span class="filter-bar-title">Job Filters</span>
+    <span class="filter-bar-chevron">▼</span>
+  </div>
+  <div class="filter-bar-body">
+
+    <div class="filter-col">
+      <label class="filter-col-label">Date Posted</label>
+      <div class="radio-row">
+        <label><input type="radio" name="datePosted" value=""  checked> Any time</label>
+        <label><input type="radio" name="datePosted" value="30"> Past month</label>
+        <label><input type="radio" name="datePosted" value="7"> Past week</label>
+        <label><input type="radio" name="datePosted" value="1"> Past 24 hours</label>
+      </div>
+    </div>
+
+    <div class="filter-col">
+      <label class="filter-col-label">Experience Level</label>
+      <div class="check-grid" id="expLevelGroup">
+        <label><input type="checkbox" value="internship"  onchange="saveFilterPrefs()"> Internship</label>
+        <label><input type="checkbox" value="entry"       onchange="saveFilterPrefs()"> Entry level</label>
+        <label><input type="checkbox" value="associate"   onchange="saveFilterPrefs()"> Associate</label>
+        <label><input type="checkbox" value="mid_senior"  onchange="saveFilterPrefs()"> Mid-Senior level</label>
+        <label><input type="checkbox" value="director"    onchange="saveFilterPrefs()"> Director</label>
+        <label><input type="checkbox" value="executive"   onchange="saveFilterPrefs()"> Executive</label>
+      </div>
+    </div>
+
+    <div class="filter-col">
+      <label class="filter-col-label">Minimum Salary</label>
+      <select class="filter-sel" id="filterSalary" onchange="saveFilterPrefs()">
+        <option value="">Any</option>
+        <option value="40000">$40,000+</option>
+        <option value="60000">$60,000+</option>
+        <option value="80000">$80,000+</option>
+        <option value="100000">$100,000+</option>
+        <option value="120000">$120,000+</option>
+        <option value="140000">$140,000+</option>
+        <option value="160000">$160,000+</option>
+        <option value="180000">$180,000+</option>
+        <option value="200000">$200,000+</option>
+      </select>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── Page body ──────────────────────── -->
+<div class="page-body">
+
+  <!-- ── Left Sidebar ──────────────────── -->
+  <aside class="sidebar">
+
+    <!-- Sources (always visible) -->
+    <div class="sb-section">
+      <div class="sb-sources-header">
+        <span class="sb-title">Job Sources</span>
+      </div>
+      <div class="source-cards" id="sourceCards"></div>
+    </div>
+
+    <!-- Job Preferences (collapsible) -->
+    <div class="sb-section" id="prefSection">
+      <div class="sb-header" onclick="toggleSbSection('prefSection')">
+        <span class="sb-title">Job Preferences</span>
+        <span class="sb-chevron">▼</span>
+      </div>
+      <div class="sb-body">
+        <p style="font-size:11px;color:#aaa;margin-bottom:10px;">These help tailor your job recommendations</p>
+
+        <div class="pref-field">
+          <label class="pref-label">Job Titles <span class="pref-note">(up to 5)</span></label>
+          <div class="multi-list" id="titlesList"></div>
+          <button class="btn-add" id="addTitleBtn" onclick="addTitleRow()">+ Add title</button>
+        </div>
+
+        <div class="pref-field">
+          <label class="pref-label">Location Type</label>
+          <div class="chip-row">
+            <div class="chip" data-pref="loctype" data-val="onsite"  onclick="toggleChip(this)">On-site</div>
+            <div class="chip" data-pref="loctype" data-val="remote"  onclick="toggleChip(this)">Remote</div>
+            <div class="chip" data-pref="loctype" data-val="hybrid"  onclick="toggleChip(this)">Hybrid</div>
+          </div>
+        </div>
+
+        <div class="pref-field">
+          <label class="pref-label">Locations – On-site <span class="pref-note">(up to 5)</span></label>
+          <div class="multi-list" id="onsiteLocsList"></div>
+          <button class="btn-add" id="addOnsiteBtn" onclick="addLocRow('onsite')">+ Add location</button>
+        </div>
+
+        <div class="pref-field">
+          <label class="pref-label">Locations – Remote <span class="pref-note">(up to 5)</span></label>
+          <div class="multi-list" id="remoteLocsList"></div>
+          <button class="btn-add" id="addRemoteBtn" onclick="addLocRow('remote')">+ Add location</button>
+        </div>
+
+        <div class="pref-field">
+          <label class="pref-label">Employment Type</label>
+          <div class="chip-row">
+            <div class="chip" data-pref="emptype" data-val="fulltime"   onclick="toggleChip(this)">Full-time</div>
+            <div class="chip" data-pref="emptype" data-val="parttime"   onclick="toggleChip(this)">Part-time</div>
+            <div class="chip" data-pref="emptype" data-val="contract"   onclick="toggleChip(this)">Contract</div>
+            <div class="chip" data-pref="emptype" data-val="internship" onclick="toggleChip(this)">Internship</div>
+          </div>
+        </div>
+
+        <button class="btn-save-prefs" onclick="savePreferences()">Save Preferences</button>
+        <div class="prefs-msg" id="prefsMsg"></div>
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- ── Chat area ──────────────────────── -->
+  <div class="chat-main">
+    <div class="chat-panel">
+      <div class="chat-header">AI Job Search Agent</div>
+      <div class="chat-messages" id="chatMessages"></div>
+      <div class="chat-input-row">
+        <textarea class="chat-input" id="chatInput" rows="2"
+          placeholder="Describe the role you're looking for..."
+          onkeydown="handleKey(event)"></textarea>
+        <button class="btn-send" id="sendBtn" onclick="sendMessage()">Send</button>
+        <button class="btn-stop" id="stopBtn" onclick="stopSearch()">Stop</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // ── Filter bar toggle ─────────────────
+  function toggleFilterBar() {
+    document.getElementById('filterBar').classList.toggle('collapsed');
+  }
+
+  // ── Sidebar section toggle ────────────
+  function toggleSbSection(id) {
+    document.getElementById(id).classList.toggle('collapsed');
+  }
+
+  // ── Chip toggle (Location Type, Employment Type) ──
+  function toggleChip(el) {
+    el.classList.toggle('active');
+  }
+
+  // ── Source definitions ───────────────
+  const ALL_SOURCES = [
+    { id: 'linkedin',     label: 'LinkedIn',     note: 'Major boards', dotClass: 'dot-linkedin'     },
+    { id: 'indeed',       label: 'Indeed',       note: 'Major boards', dotClass: 'dot-indeed'       },
+    { id: 'glassdoor',    label: 'Glassdoor',    note: 'Major boards', dotClass: 'dot-glassdoor'    },
+    { id: 'google',       label: 'Google Jobs',  note: 'Major boards', dotClass: 'dot-google'       },
+    { id: 'ziprecruiter', label: 'ZipRecruiter', note: 'Major boards', dotClass: 'dot-ziprecruiter' },
+    { id: 'himalayas',    label: 'Himalayas',    note: 'Remote-only',  dotClass: 'dot-himalayas'    },
+    { id: 'arbeitnow',    label: 'Arbeitnow',    note: 'EU + Remote',  dotClass: 'dot-arbeitnow'    },
+  ];
+
+  const STORAGE_KEY = 'f003_sources_v2';
+
+  function loadSourceState() {
+    try {
+      const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+      if (Array.isArray(stored)) {
+        const valid = stored.filter(id => ALL_SOURCES.some(s => s.id === id));
+        if (valid.length > 0) return new Set(valid);
+      }
+    } catch (_) {}
+    return new Set(['linkedin']);
+  }
+
+  function saveSourceState(activeSet) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify([...activeSet]));
+  }
+
+  let activeSources = loadSourceState();
+
+  function buildSourceCards() {
+    const container = document.getElementById('sourceCards');
+    container.innerHTML = '';
+    ALL_SOURCES.forEach(src => {
+      const card = document.createElement('div');
+      card.className = 'src-card' + (activeSources.has(src.id) ? ' active' : '');
+      card.dataset.id = src.id;
+      card.innerHTML = `
+        <span class="src-dot ${src.dotClass}"></span>
+        ${src.label}
+        <span class="src-note">${src.note}</span>
+      `;
+      card.addEventListener('click', () => {
+        if (activeSources.has(src.id)) {
+          activeSources.delete(src.id);
+          card.classList.remove('active');
+        } else {
+          activeSources.add(src.id);
+          card.classList.add('active');
+        }
+        saveSourceState(activeSources);
+      });
+      container.appendChild(card);
+    });
+  }
+
+  function getActiveSources() {
+    return ALL_SOURCES.map(s => s.id).filter(id => activeSources.has(id));
+  }
+
+  // ── Multi-row helpers ─────────────────
+  function addTitleRow() {
+    const list = document.getElementById('titlesList');
+    if (list.children.length >= 5) return;
+    list.appendChild(makeMultiRow('e.g. Software Engineer'));
+    if (list.children.length >= 5) document.getElementById('addTitleBtn').style.display = 'none';
+  }
+
+  function addLocRow(type) {
+    const listId = type === 'onsite' ? 'onsiteLocsList' : 'remoteLocsList';
+    const btnId  = type === 'onsite' ? 'addOnsiteBtn'   : 'addRemoteBtn';
+    const list = document.getElementById(listId);
+    if (list.children.length >= 5) return;
+    list.appendChild(makeMultiRow('e.g. New York, NY'));
+    if (list.children.length >= 5) document.getElementById(btnId).style.display = 'none';
+  }
+
+  function makeMultiRow(placeholder) {
+    const row = document.createElement('div');
+    row.className = 'multi-row';
+    row.innerHTML = `
+      <input type="text" placeholder="${placeholder}">
+      <button class="btn-rm" onclick="removeRow(this)" title="Remove">×</button>
+    `;
+    return row;
+  }
+
+  function removeRow(btn) {
+    const row  = btn.closest('.multi-row');
+    const list = row.parentElement;
+    row.remove();
+    if (list.id === 'titlesList')     document.getElementById('addTitleBtn').style.display = '';
+    if (list.id === 'onsiteLocsList') document.getElementById('addOnsiteBtn').style.display = '';
+    if (list.id === 'remoteLocsList') document.getElementById('addRemoteBtn').style.display = '';
+  }
+
+  function getMultiValues(listId) {
+    return [...document.querySelectorAll(`#${listId} input`)]
+      .map(i => i.value.trim()).filter(Boolean);
+  }
+
+  // ── Preferences ───────────────────────
+  function savePreferences() {
+    const prefs = {
+      titles:           getMultiValues('titlesList'),
+      location_types:   [...document.querySelectorAll('[data-pref="loctype"].active')].map(c => c.dataset.val),
+      locations_onsite: getMultiValues('onsiteLocsList'),
+      locations_remote: getMultiValues('remoteLocsList'),
+      employment_types: [...document.querySelectorAll('[data-pref="emptype"].active')].map(c => c.dataset.val),
+    };
+    fetch('/api/preferences', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(prefs),
+    })
+      .then(r => r.json())
+      .then(data => {
+        const el = document.getElementById('prefsMsg');
+        if (data.ok) {
+          el.textContent = 'Preferences saved ✓';
+          el.className = 'prefs-msg';
+          setTimeout(() => { el.textContent = ''; }, 2500);
+        } else {
+          el.textContent = data.error || 'Save failed';
+          el.className = 'prefs-msg error';
+        }
+      })
+      .catch(() => {
+        const el = document.getElementById('prefsMsg');
+        el.textContent = 'Save failed — server unreachable';
+        el.className = 'prefs-msg error';
+      });
+  }
+
+  function saveFilterPrefs() {
+    const expLevels = [...document.querySelectorAll('#expLevelGroup input:checked')].map(i => i.value);
+    const salary    = document.getElementById('filterSalary').value;
+    fetch('/api/preferences/filters', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ experience_levels: expLevels, min_salary: salary ? parseInt(salary) : 0 }),
+    }).catch(() => {});
+  }
+
+  function loadPreferences() {
+    fetch('/api/preferences')
+      .then(r => r.json())
+      .then(prefs => {
+        (prefs.titles || []).forEach(() => addTitleRow());
+        document.querySelectorAll('#titlesList input').forEach((inp, i) => {
+          if ((prefs.titles || [])[i]) inp.value = prefs.titles[i];
+        });
+        (prefs.location_types || []).forEach(val => {
+          const el = document.querySelector(`[data-pref="loctype"][data-val="${val}"]`);
+          if (el) el.classList.add('active');
+        });
+        (prefs.locations_onsite || []).forEach(() => addLocRow('onsite'));
+        document.querySelectorAll('#onsiteLocsList input').forEach((inp, i) => {
+          if ((prefs.locations_onsite || [])[i]) inp.value = prefs.locations_onsite[i];
+        });
+        (prefs.locations_remote || []).forEach(() => addLocRow('remote'));
+        document.querySelectorAll('#remoteLocsList input').forEach((inp, i) => {
+          if ((prefs.locations_remote || [])[i]) inp.value = prefs.locations_remote[i];
+        });
+        (prefs.employment_types || []).forEach(val => {
+          const el = document.querySelector(`[data-pref="emptype"][data-val="${val}"]`);
+          if (el) el.classList.add('active');
+        });
+        (prefs.experience_levels || []).forEach(val => {
+          const el = document.querySelector(`#expLevelGroup input[value="${val}"]`);
+          if (el) el.checked = true;
+        });
+        if (prefs.min_salary) {
+          document.getElementById('filterSalary').value = String(prefs.min_salary);
+        }
+      })
+      .catch(() => {});
+  }
+
+  // ── Chat history persistence ──────────
+  const CHAT_KEY = 'f003_chat_history';
+
+  function _saveChatEntry(entry) {
+    const history = JSON.parse(sessionStorage.getItem(CHAT_KEY) || '[]');
+    history.push(entry);
+    sessionStorage.setItem(CHAT_KEY, JSON.stringify(history));
+  }
+
+  function clearChatHistory() {
+    sessionStorage.removeItem(CHAT_KEY);
+  }
+
+  function restoreChatHistory() {
+    const history = JSON.parse(sessionStorage.getItem(CHAT_KEY) || '[]');
+    history.forEach(entry => {
+      if      (entry.type === 'bubble') addBubble(entry.role, entry.text, true);
+      else if (entry.type === 'status') addStatusBubble(entry.jobCount, true);
+      else if (entry.type === 'warn')   addWarnBubble(entry.errors, true);
+    });
+    return history.length > 0;
+  }
+
+  // ── Chat ─────────────────────────────
+  let waiting = false;
+
+  function addBubble(role, text, silent = false) {
+    const el = document.createElement('div');
+    el.className = 'bubble ' + role;
+    el.textContent = text;
+    const container = document.getElementById('chatMessages');
+    container.appendChild(el);
+    container.scrollTop = container.scrollHeight;
+    if (!silent) _saveChatEntry({ type: 'bubble', role, text });
+    return el;
+  }
+
+  function addTypingIndicator() {
+    const el = document.createElement('div');
+    el.className = 'bubble ai typing-dots';
+    el.innerHTML = '<span></span><span></span><span></span>';
+    const container = document.getElementById('chatMessages');
+    container.appendChild(el);
+    container.scrollTop = container.scrollHeight;
+    return el;
+  }
+
+  function addWarnBubble(errors, silent = false) {
+    const el = document.createElement('div');
+    el.className = 'bubble warn';
+    el.textContent = 'Source issues:\n' + errors.map(e => '• ' + e).join('\n');
+    const container = document.getElementById('chatMessages');
+    container.appendChild(el);
+    container.scrollTop = container.scrollHeight;
+    if (!silent) _saveChatEntry({ type: 'warn', errors });
+  }
+
+  function addStatusBubble(jobCount, silent = false) {
+    const el = document.createElement('div');
+    el.className = 'bubble status';
+    el.innerHTML = `✓ Found ${jobCount} job${jobCount !== 1 ? 's' : ''} — <a href="/jobs">View Results →</a>`;
+    const container = document.getElementById('chatMessages');
+    container.appendChild(el);
+    container.scrollTop = container.scrollHeight;
+    if (!silent) _saveChatEntry({ type: 'status', jobCount });
+  }
+
+  function handleKey(e) {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+  }
+
+  let _abortCtrl = null;
+
+  function setInputEnabled(enabled) {
+    document.getElementById('chatInput').disabled = !enabled;
+    document.getElementById('sendBtn').style.display = enabled ? '' : 'none';
+    document.getElementById('stopBtn').style.display = enabled ? 'none' : 'block';
+  }
+
+  function stopSearch() {
+    if (_abortCtrl) _abortCtrl.abort();
+    fetch('/api/agent/stop', { method: 'POST' });
+  }
+
+  function sendMessage() {
+    if (waiting) return;
+    const input = document.getElementById('chatInput');
+    const text  = input.value.trim();
+    if (!text) return;
+
+    if (getActiveSources().length === 0) {
+      addBubble('ai', 'Please select at least one job source in the left panel before searching.');
+      return;
+    }
+
+    addBubble('user', text);
+    input.value = '';
+    waiting = true;
+    setInputEnabled(false);
+
+    const dots = addTypingIndicator();
+    _abortCtrl = new AbortController();
+
+    fetch('/api/agent/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: text, sources: getActiveSources() }),
+      signal: _abortCtrl.signal,
+    })
+      .then(r => r.json())
+      .then(data => {
+        dots.remove();
+        if (data.error) { addBubble('ai', 'Error: ' + data.error); return; }
+        if (data.reply) addBubble('ai', data.reply);
+        if (data.source_errors && data.source_errors.length > 0) addWarnBubble(data.source_errors);
+        if (data.done)  addStatusBubble(data.job_count || 0);
+      })
+      .catch(err => {
+        dots.remove();
+        if (err.name !== 'AbortError') {
+          addBubble('ai', 'Connection error: ' + err.message);
+        }
+      })
+      .finally(() => {
+        _abortCtrl = null;
+        waiting = false;
+        setInputEnabled(true);
+        document.getElementById('chatInput').focus();
+      });
+  }
+
+  function newSearch() {
+    clearChatHistory();
+    fetch('/api/agent/reset', { method: 'POST' })
+      .then(() => {
+        document.getElementById('chatMessages').innerHTML = '';
+        addBubble('ai', "Search cleared. What role are you looking for?");
+        document.getElementById('chatInput').focus();
+      })
+      .catch(() => addBubble('ai', 'Could not reset — try refreshing.'));
+  }
+
+  // ── Init ──────────────────────────────
+  buildSourceCards();
+  loadPreferences();
+
+  const hadHistory = restoreChatHistory();
+  if (!hadHistory) {
+    fetch('/api/agent/reset', { method: 'POST' })
+      .then(() => addBubble('ai', "Hi! I'm your job search agent. Tell me what role you're looking for and where — for example: \"Senior Python developer, remote\" or \"Cloud architect in Austin, TX\"."))
+      .catch(() => addBubble('ai', "Couldn't connect — is the server running?"));
+  }
+</script>
+
+</body>
+</html>
