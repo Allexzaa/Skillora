@@ -1,7 +1,7 @@
 <div align="center">
-  <img src="assets/icon.jpeg" alt="Skillora" width="100" />
-
-  # Skillora
+  <img src="assets/icon.jpeg" alt="Skillora" width="180" />
+  <br /><br />
+  <img src="assets/title.png" alt="Skillora" width="420" />
 
   **A private, local-first AI platform for job discovery, resume tailoring, and candidate coaching.**
 
