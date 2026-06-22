@@ -6,6 +6,7 @@ Opens at: http://localhost:5000
 """
 
 import json
+import os
 import re
 import sys
 import threading
@@ -29,7 +30,7 @@ PREFS_FILE  = MEMORY_DIR / "job_preferences.json"
 sys.path.insert(0, str(RESUME_DIR))
 
 app = Flask(__name__, template_folder="templates", static_folder="static")
-app.secret_key = "dev-secret-key"
+app.secret_key = os.environ.get("SECRET_KEY", "change-this-before-deploying")
 
 OLLAMA_URL   = "http://localhost:11434/api/chat"
 OLLAMA_MODEL = "qwen3:32b"

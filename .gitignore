@@ -16,6 +16,10 @@ ENV/
 Alex_Zare_Resume_*.docx
 Alex_Zare_Resume_*.pdf
 
+# Personal resume content (keep template examples only)
+resume/resume-base.yaml
+resume/overrides/
+
 # Generated output
 resume/output/
 

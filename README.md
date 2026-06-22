@@ -1,4 +1,4 @@
-<img src="assets/icon.png" alt="Skillora" width="72" />
+<img src="assets/icon.jpeg" alt="Skillora" width="72" />
 
 # Skillora
 
@@ -127,7 +127,7 @@ python render.py --job sample
 python render.py --job sample --out "FirstName_LastName_Role.pdf"
 ```
 
-- Edit `resume/resume-base.yaml` for content
+- Copy `resume/resume-base.example.yaml` → `resume/resume-base.yaml` and fill in your details
 - Edit `resume/template.html` for design
 - Create `resume/overrides/resume-[slug].yaml` for per-job overrides
 - PDFs are written to `resume/output/`
